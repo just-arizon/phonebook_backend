@@ -1,9 +1,11 @@
 const express = require('express')
 const app = express()
 let morgan = require('morgan')
+const cors = require('cors')
 
+app.use(cors())
 app.use(express.json())
-
+app.use(express.static('dist'))
 
 let persons = [
     { 
@@ -30,6 +32,7 @@ let persons = [
 
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms'))
+
 
 app.get('/info', (request, response) => {
   const timestamps = new Date()
