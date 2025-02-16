@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 let morgan = require('morgan')
 const cors = require('cors')
+const Person = require('./models/person')
 
 app.use(cors())
 app.use(express.json())
@@ -45,7 +46,12 @@ app.get('/info', (request, response) => {
 
 // get request
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+  Person.find({}).then(persons => {
+    response.json(persons);
+  }).catch(error => {
+    console.error(error);
+    response.status(500).json({ error: 'Error fetching persons' });
+  });
 })
 
 app.get('/api/persons/:id', (request, response) => {
@@ -77,27 +83,43 @@ const generateId = () => {
 
 // post request
 app.post('/api/persons', (request, response) => {
-const body = request.body
+  const { name, number } = request.body;
 
-if (!body.name || !body.number) {
-  return response.status(400).json({
-    error: 'name or number missing'
-  })
-}
-if (body.name) {
-  return response.status(400).json({
-    error: 'name must be unique'
-  })
-}
+  if (!name || !number) {
+    return response.status(400).json({ error: 'Name and Number are required' });
+  }
 
-const person = {
-  name: body.name,
-  number: body.number,
-  id: generateId()
-}
-persons = persons.concat(person)
-response.json(person)
-})
+  // Check if the name already exists in the database
+  Person.findOne({ name }).then((existingPerson) => {
+    if (existingPerson) {
+      return response.status(400).json({ error: 'Name must be unique' });
+    }
+
+    // Create a new instance of the Person model
+    const newPerson = new Person({
+      name,
+      number,
+    });
+
+    // Save to MongoDB
+    newPerson.save().then((savedPerson) => {
+      response.json(savedPerson);
+    });
+  });
+});
+
+
+// persons = persons.concat(person)
+// response.json(person)
+
+// person.save().then(savedPerson => {
+//   response.json(savedPerson);
+// }).catch(error => {
+//   console.error(error);
+//   response.status(500).json({ error: 'Error saving person' });
+// });
+
+
 
 
 const PORT = 3003; ;
